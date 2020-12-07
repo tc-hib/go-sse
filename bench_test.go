@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sync"
@@ -27,14 +28,6 @@ func (m *mockResponseWriter) WriteHeader(int) {}
 
 func (m *mockResponseWriter) Flush() {}
 
-func (m *mockResponseWriter) CloseNotify() <-chan bool {
-	return m.c
-}
-
-func (m *mockResponseWriter) Close() {
-	m.c <- true
-}
-
 func BenchmarkServeHTTP(b *testing.B) {
 	srv := NewServer(&Options{
 		Logger: nil,
@@ -42,7 +35,8 @@ func BenchmarkServeHTTP(b *testing.B) {
 
 	defer srv.Shutdown()
 
-	req, _ := http.NewRequest("GET", "/channel-name", nil)
+	ctx, done := context.WithCancel(context.Background())
+	req, _ := http.NewRequestWithContext(ctx, "GET", "/channel-name", nil)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -53,7 +47,7 @@ func BenchmarkServeHTTP(b *testing.B) {
 		}
 
 		go func() {
-			res.Close()
+			done()
 		}()
 
 		srv.ServeHTTP(res, req)
