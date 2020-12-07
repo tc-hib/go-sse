@@ -15,7 +15,7 @@ import (
 
 func TestNewServerNilOptions(t *testing.T) {
 	srv := NewServer(nil)
-	defer srv.Shutdown()
+	defer srv.Shutdown(context.TODO())
 
 	if srv == nil || srv.options == nil || srv.options.Logger == nil {
 		t.Fail()
@@ -27,7 +27,7 @@ func TestNewServerNilLogger(t *testing.T) {
 		Logger: nil,
 	})
 
-	defer srv.Shutdown()
+	defer srv.Shutdown(context.TODO())
 
 	if srv == nil || srv.options == nil || srv.options.Logger == nil {
 		t.Fail()
@@ -43,7 +43,7 @@ func TestServer(t *testing.T) {
 		Logger: log.New(os.Stdout, "go-sse: ", log.Ldate|log.Ltime|log.Lshortfile),
 	})
 
-	defer srv.Shutdown()
+	defer srv.Shutdown(context.TODO())
 
 	// Create N channels
 	for n := 0; n < channelCount; n++ {
@@ -61,7 +61,7 @@ func TestServer(t *testing.T) {
 			wg.Add(1)
 
 			// Create new client
-			c := newClient("", name)
+			c := newClient(name)
 			// Add client to current channel
 			ch.addClient(c)
 
@@ -120,7 +120,7 @@ func TestShutdown(t *testing.T) {
 
 	<-stop
 
-	srv.Shutdown()
+	srv.Shutdown(context.TODO())
 
 	ctx, done := context.WithTimeout(context.Background(), 600*time.Millisecond)
 	err := httpServer.Shutdown(ctx)

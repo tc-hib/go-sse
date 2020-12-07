@@ -33,7 +33,7 @@ func BenchmarkServeHTTP(b *testing.B) {
 		Logger: nil,
 	})
 
-	defer srv.Shutdown()
+	defer srv.Shutdown(context.TODO())
 
 	ctx, done := context.WithCancel(context.Background())
 	req, _ := http.NewRequestWithContext(ctx, "GET", "/channel-name", nil)
@@ -59,7 +59,7 @@ func BenchmarkSendMessage(b *testing.B) {
 		Logger: nil,
 	})
 
-	defer srv.Shutdown()
+	defer srv.Shutdown(context.TODO())
 
 	for n := 0; n < 10; n++ {
 		srv.addChannel(fmt.Sprintf("CH-%d", n+1))
@@ -76,7 +76,7 @@ func BenchmarkSendMessage(b *testing.B) {
 			name := name
 			ch := ch
 			go func() {
-				c := newClient("", name)
+				c := newClient(name)
 				ch.addClient(c)
 
 				wgReg.Done()

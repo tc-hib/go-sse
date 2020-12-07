@@ -11,11 +11,14 @@ type Options struct {
 	RetryInterval int
 	// Headers allow to set custom headers (useful for CORS support).
 	Headers map[string]string
-	// ChannelNameFunc allow to create custom channel names.
+	// ChannelNameFunc allows to create custom channel names.
 	// Default channel name is the request path.
 	ChannelNameFunc func(*http.Request) string
 	// All usage logs end up in Logger
 	Logger *log.Logger
+	// WelcomeFunc may provide messages on client (re)connection.
+	// It must be goroutine-safe.
+	WelcomeFunc WelcomeMaker
 }
 
 func (opt *Options) hasHeaders() bool {
