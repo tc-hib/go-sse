@@ -3,7 +3,10 @@
 Server-Sent Events for Go
 
 This is a fork of [alexandrevicenzi/go-sse](https://github.com/alexandrevicenzi/go-sse) made for my own requirements.
+
 You probably want to use the original.
+
+*WARNING* This fork still has to be tested!
 
 ## Installation
 
