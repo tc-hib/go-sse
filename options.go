@@ -7,8 +7,9 @@ import (
 
 // Options holds server configurations.
 type Options struct {
-	// RetryInterval change EventSource default retry interval (milliseconds).
-	RetryInterval int
+	// ReconnectionTime is how much time the user agent should wait to reconnect if connection is lost (in milliseconds).
+	// Zero leaves the user agent's default behaviour unchanged.
+	ReconnectionTime int
 
 	// Headers allow to set custom headers (useful for CORS support).
 	Headers map[string]string

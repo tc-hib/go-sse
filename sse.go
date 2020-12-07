@@ -391,11 +391,11 @@ func (s *Server) welcomeMessages(channel string, lastEventID string) []Message {
 	if s.options.WelcomeFunc != nil {
 		m = s.options.WelcomeFunc(channel, lastEventID)
 	}
-	if s.options.RetryInterval != 0 {
+	if s.options.ReconnectionTime != 0 {
 		if len(m) == 0 {
-			m = []Message{{retry: s.options.RetryInterval}}
+			m = []Message{{retry: s.options.ReconnectionTime}}
 		} else {
-			m[0].retry = s.options.RetryInterval
+			m[0].retry = s.options.ReconnectionTime
 		}
 	}
 	return m
