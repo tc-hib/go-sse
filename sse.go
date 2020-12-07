@@ -24,8 +24,20 @@ type Server struct {
 }
 
 // WelcomeMaker is a callback function that may provide messages on client (re)connection.
-// It must be goroutine-safe.
+//
+// WARNING: It must be goroutine-safe.
 type WelcomeMaker func(channel string, lastEventID string) []Message
+
+// ConnectionHandler is a callback. It's called on each connection.
+// Returns false to reject connection.
+//
+// WARNING: It must be goroutine-safe.
+type ConnectionHandler func(channel string, lastEventID string, request *http.Request) bool
+
+// DisconnectionHandler is a callback. It's called on each disconnection.
+//
+// WARNING: It must be goroutine-safe.
+type DisconnectionHandler func(channel string, request *http.Request)
 
 // NewServer creates a new SSE server.
 func NewServer(options *Options) *Server {
@@ -98,6 +110,15 @@ func (s *Server) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	}
 
 	lastEventID := request.Header.Get("Last-Event-ID")
+
+	// Callback on connection
+	if s.options.ConnectionFunc != nil {
+		if !s.options.ConnectionFunc(channelName, lastEventID, request) {
+			response.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
+
 	c := newClient(channelName)
 	s.addClient <- c
 	closeNotify := request.Context().Done()
@@ -123,8 +144,7 @@ func (s *Server) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	response.WriteHeader(http.StatusOK)
 	flusher.Flush()
 
-	err := writeMessages(response, s.welcomeMessages(channelName, lastEventID))
-	if err != nil {
+	if err := writeMessages(response, s.welcomeMessages(channelName, lastEventID)); err != nil {
 		s.options.Logger.Println(err)
 		response.WriteHeader(http.StatusInternalServerError)
 		return
@@ -132,13 +152,17 @@ func (s *Server) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	flusher.Flush()
 
 	for msg := range c.send {
-		_, err := response.Write(msg.Bytes())
-		if err != nil {
+		if _, err := response.Write(msg.Bytes()); err != nil {
 			s.options.Logger.Println(err)
 			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		flusher.Flush()
+	}
+
+	// Callback on disconnection
+	if s.options.DisconnectionFunc != nil {
+		s.options.DisconnectionFunc(channelName, request)
 	}
 }
 

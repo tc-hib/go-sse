@@ -2,7 +2,7 @@ package sse
 
 import "sync"
 
-// Client represents a web browser connection.
+// client represents a web browser connection.
 type client struct {
 	mu      sync.Mutex
 	channel string
