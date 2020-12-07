@@ -1,6 +1,9 @@
 package sse
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 func TestEmptyMessage(t *testing.T) {
 	msg := Message{}
@@ -44,5 +47,53 @@ func TestSpecialCharacterMessage(t *testing.T) {
 
 	if msg.String() != "data: %x%o\n\n" {
 		t.Fatal("Message does not match.")
+	}
+}
+
+func TestMessageBatch(t *testing.T) {
+	testData := []struct {
+		messages []Message
+		expected string
+	}{
+		{
+			nil,
+			"",
+		},
+		{
+			[]Message{
+				{
+					id:    "id1",
+					data:  "data1a\ndata1b",
+					event: "event1",
+				},
+				{
+					id:    "id2",
+					data:  "data2a\ndata2b",
+					event: "event2",
+				},
+			},
+			`id: id1
+event: event1
+data: data1a
+data: data1b
+
+id: id2
+event: event2
+data: data2a
+data: data2b
+
+`,
+		},
+	}
+
+	for i := range testData {
+		var buf []byte
+		b := bytes.NewBuffer(buf)
+		if err := writeMessages(b, testData[i].messages); err != nil {
+			t.Fatal(err)
+		}
+		if b.String() != testData[i].expected {
+			t.Fatalf("Expected %q, got %q\n", testData[i].expected, b.String())
+		}
 	}
 }

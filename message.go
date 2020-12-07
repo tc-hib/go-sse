@@ -3,6 +3,7 @@ package sse
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -22,10 +23,10 @@ func SimpleMessage(data string) *Message {
 // NewMessage creates an event source message.
 func NewMessage(id, data, event string) *Message {
 	return &Message{
-		id,
-		data,
-		event,
-		0,
+		id:    id,
+		data:  data,
+		event: event,
+		retry: 0,
 	}
 }
 
@@ -62,4 +63,15 @@ func (m *Message) String() string {
 // Bytes returns the formatted message as a byte array.
 func (m *Message) Bytes() []byte {
 	return m.Buffer().Bytes()
+}
+
+// writeMessages writes a batch of messages, separated by newlines.
+func writeMessages(w io.Writer, m []Message) error {
+	for i := range m {
+		_, err := w.Write(m[i].Bytes())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
