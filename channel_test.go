@@ -16,7 +16,7 @@ func readMsg(c *client) {
 
 func TestSendMessage(t *testing.T) {
 	ch := newChannel("channel")
-	defer ch.Close()
+	defer ch.close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -57,7 +57,4 @@ func TestSendMessage(t *testing.T) {
 		t.Fatal("Wrong message count.")
 	}
 
-	if ch.LastEventID() != <-lastID {
-		t.Fatal("Wrong Last ID.")
-	}
 }

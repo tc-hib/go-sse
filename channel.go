@@ -6,41 +6,44 @@ import (
 
 // Channel represents a server sent events channel.
 type Channel struct {
-	mu          sync.RWMutex
-	lastEventID string
-	name        string
-	clients     map[*Client]bool
+	mu      sync.RWMutex
+	name    string
+	clients map[*client]struct{}
 }
 
 func newChannel(name string) *Channel {
 	return &Channel{
-		sync.RWMutex{},
-		"",
-		name,
-		make(map[*Client]bool),
+		mu:      sync.RWMutex{},
+		name:    name,
+		clients: make(map[*client]struct{}),
 	}
 }
 
-// SendMessage broadcast a message to all clients in a channel.
+// SendMessage broadcasts a message to all clients in a channel.
+// Safe to use from any goroutine.
 func (c *Channel) SendMessage(message *Message) {
-	c.lastEventID = message.id
-
 	c.mu.RLock()
 
-	for c, open := range c.clients {
-		if open {
-			c.send <- message
-		}
+	for client := range c.clients {
+		client.sendMessage(message)
 	}
 
 	c.mu.RUnlock()
 }
 
-// Close closes the channel and disconnect all clients.
-func (c *Channel) Close() {
-	// Kick all clients of this channel.
-	for client := range c.clients {
-		c.removeClient(client)
+// close closes the channel and disconnects all clients.
+func (c *Channel) close() {
+	var clients map[*client]struct{}
+
+	c.mu.Lock()
+
+	clients = c.clients
+	c.clients = make(map[*client]struct{})
+
+	c.mu.Unlock()
+
+	for client := range clients {
+		client.close()
 	}
 }
 
@@ -53,22 +56,23 @@ func (c *Channel) ClientCount() int {
 	return count
 }
 
-// LastEventID returns the ID of the last message sent.
-func (c *Channel) LastEventID() string {
-	return c.lastEventID
+// Name returns the channel's name.
+func (c *Channel) Name() string {
+	return c.name
 }
 
-func (c *Channel) addClient(client *Client) {
+func (c *Channel) addClient(client *client) {
 	c.mu.Lock()
-	c.clients[client] = true
+	c.clients[client] = struct{}{}
 	c.mu.Unlock()
 }
 
-func (c *Channel) removeClient(client *Client) {
+func (c *Channel) removeClient(client *client) int {
 	c.mu.Lock()
-	c.clients[client] = false
+	defer c.mu.Unlock()
+
+	client.close()
 	delete(c.clients, client)
-	c.mu.Unlock()
-	close(client.send)
-	client.removed <- struct{}{}
+
+	return len(c.clients)
 }
