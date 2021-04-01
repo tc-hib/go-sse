@@ -17,14 +17,15 @@ type Options struct {
 	// ChannelNameFunc allows to create custom channel names.
 	// Default channel name is the request path.
 	ChannelNameFunc func(*http.Request) string
-	// All usage logs end up in Logger
 
+	// All usage logs end up in Logger
 	Logger *log.Logger
+
 	// WelcomeFunc may provide messages on client (re)connection.
 	//
 	// WARNING: It must be goroutine-safe.
-
 	WelcomeFunc WelcomeMaker
+
 	// ConnectionFunc is a callback. It's called on each connection.
 	// Returns false to reject connection.
 	//
